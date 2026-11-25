@@ -236,6 +236,30 @@ describe('lookup engine', () => {
     expect(lookup).toHaveBeenCalledTimes(1);
   });
 
+  it('holds requests at the pause gate', async () => {
+    let release!: () => void;
+    let gateCalls = 0;
+    const gate = () =>
+      new Promise<void>((resolve) => {
+        gateCalls += 1;
+        release = resolve;
+      });
+    const lookup = vi.fn(async () => ({ genres: [{ name: 'Rock', sources: ['Discogs' as const] }] }));
+    const provider: GenreProvider = { id: 'discogs', label: 'Discogs', priority: 10, lookup };
+    const work = refineLibrary(
+      [track('1', 'A', 'One')],
+      [],
+      { providers: [provider], negativeCache: new NegativeCache(), gate },
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(gateCalls).toBe(1);
+    expect(lookup).not.toHaveBeenCalled();
+    release();
+    const results = await work;
+    expect(lookup).toHaveBeenCalledTimes(1);
+    expect(results[0].genres[0].name).toBe('Rock');
+  });
+
   it('reports errors only when no source produced genres', async () => {
     const failing: GenreProvider = {
       id: 'discogs',
