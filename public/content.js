@@ -40,11 +40,8 @@
   class NoAuthError extends Error {}
 
   async function requestApi(base, path, init = {}) {
-    const controller =
-      typeof AbortController === 'function' ? new AbortController() : null;
-    const timer = controller
-      ? setTimeout(() => controller.abort(), 20000)
-      : null;
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 20000) : null;
     let response;
     try {
       response = await fetch(`${base}${path}`, {
@@ -63,9 +60,10 @@
       if (timer) clearTimeout(timer);
     }
     if (response.status === 401 || response.status === 403) {
-      throw new NoAuthError(
-        'Войдите в аккаунт Яндекс Музыки и повторите сбор.',
-      );
+      throw new NoAuthError('YANDEX_AUTH');
+    }
+    if (response.status === 429) {
+      throw new Error('YANDEX_RATE_LIMIT');
     }
     if (!response.ok) {
       throw new Error(`API Яндекс Музыки ответил с кодом ${response.status}.`);
@@ -75,22 +73,18 @@
     try {
       payload = JSON.parse(text);
     } catch {
-      throw new NoAuthError(
-        'API Яндекс Музыки вернул страницу входа вместо данных.',
-      );
+      throw new NoAuthError('API Яндекс Музыки вернул страницу входа вместо данных.');
     }
-    return payload && typeof payload === 'object' && 'result' in payload
-      ? payload.result
-      : payload;
+    return payload && typeof payload === 'object' && 'result' in payload ? payload.result : payload;
   }
 
   const isFullTrack = (track) =>
     Boolean(
       track &&
-        typeof track === 'object' &&
-        clean(track.title) &&
-        Array.isArray(track.artists) &&
-        track.artists.length,
+      typeof track === 'object' &&
+      clean(track.title) &&
+      Array.isArray(track.artists) &&
+      track.artists.length,
     );
 
   const toTrack = (track) => {
@@ -130,7 +124,10 @@
         /* the content script has already timed out */
       }
     };
-    const text = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
+    const text = (value) =>
+      String(value ?? '')
+        .replace(/\s+/g, ' ')
+        .trim();
     const read = async (url) => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 15000);
@@ -145,12 +142,13 @@
         clearTimeout(timer);
       }
       if (response.status === 401 || response.status === 403) {
-        throw new Error('Войдите в аккаунт Яндекс Музыки и повторите сбор.');
+        throw new Error('YANDEX_AUTH');
+      }
+      if (response.status === 429) {
+        throw new Error('YANDEX_RATE_LIMIT');
       }
       if (!response.ok) {
-        throw new Error(
-          `API Яндекс Музыки ответил с кодом ${response.status}.`,
-        );
+        throw new Error(`API Яндекс Музыки ответил с кодом ${response.status}.`);
       }
       return response.json();
     };
@@ -203,11 +201,7 @@
       const short = [];
       for (const item of items) {
         const embedded = item?.track ?? item;
-        if (
-          embedded &&
-          Array.isArray(embedded.artists) &&
-          embedded.artists.length
-        ) {
+        if (embedded && Array.isArray(embedded.artists) && embedded.artists.length) {
           add(embedded);
         } else if (item && item.id !== undefined) {
           short.push(item);
@@ -245,8 +239,7 @@
     } catch (error) {
       post({
         ok: false,
-        error:
-          error instanceof Error ? error.message : 'Не удалось прочитать список.',
+        error: error instanceof Error ? error.message : 'Не удалось прочитать список.',
       });
     }
   }
@@ -300,19 +293,11 @@
 
     const uid = status?.account?.uid;
     if (!uid) {
-      throw new NoAuthError(
-        'Войдите в аккаунт Яндекс Музыки и повторите сбор.',
-      );
+      throw new NoAuthError('Войдите в аккаунт Яндекс Музыки и повторите сбор.');
     }
 
-    const likes = await requestApi(
-      base,
-      `/users/${encodeURIComponent(uid)}/likes/tracks`,
-    );
-    const items =
-      likes?.library?.tracks ??
-      likes?.tracks ??
-      (Array.isArray(likes) ? likes : null);
+    const likes = await requestApi(base, `/users/${encodeURIComponent(uid)}/likes/tracks`);
+    const items = likes?.library?.tracks ?? likes?.tracks ?? (Array.isArray(likes) ? likes : null);
     if (!Array.isArray(items)) {
       throw new Error('API Яндекс Музыки вернул неожиданный формат списка.');
     }
@@ -454,9 +439,7 @@
 
   const readFavoritesViaDom = async () => {
     if (!looksLikeFavorites()) {
-      throw new Error(
-        'Откройте страницу «Мне нравится» или войдите в аккаунт Яндекс Музыки.',
-      );
+      throw new Error('Откройте страницу «Мне нравится» или войдите в аккаунт Яндекс Музыки.');
     }
     if (!(await waitForRows(6000))) {
       throw new Error(
@@ -484,8 +467,7 @@
         const before = found.size;
         await wait(300);
         collectVisibleTracks(found);
-        stagnantBottomPasses =
-          found.size > before ? 0 : stagnantBottomPasses + 1;
+        stagnantBottomPasses = found.size > before ? 0 : stagnantBottomPasses + 1;
         if (stagnantBottomPasses >= 4) break;
         continue;
       }
@@ -527,8 +509,7 @@
     } catch (error) {
       apiError = error;
     }
-    lastApiFailure =
-      apiError instanceof Error ? apiError.message : String(apiError);
+    lastApiFailure = apiError instanceof Error ? apiError.message : String(apiError);
     try {
       console.warn(
         '[Жанрограф] Не удалось прочитать коллекцию через API, использую прокрутку страницы:',
@@ -537,27 +518,21 @@
       return await readFavoritesViaDom();
     } catch (domError) {
       if (apiError instanceof NoAuthError) throw apiError;
-      const reason =
-        domError instanceof Error ? domError.message : String(domError);
-      throw new Error(
-        apiError instanceof Error
-          ? `${apiError.message} ${reason}`
-          : reason,
-      );
+      const reason = domError instanceof Error ? domError.message : String(domError);
+      throw new Error(apiError instanceof Error ? `${apiError.message} ${reason}` : reason);
     }
   };
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== 'READ_YANDEX_FAVORITES') return false;
     readFavorites()
-      .then((tracks) => sendResponse({ ok: true, tracks, apiError: lastApiFailure || undefined, version: 'v7' }))
+      .then((tracks) =>
+        sendResponse({ ok: true, tracks, apiError: lastApiFailure || undefined, version: 'v7' }),
+      )
       .catch((error) =>
         sendResponse({
           ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Не удалось прочитать список.',
+          error: error instanceof Error ? error.message : 'Не удалось прочитать список.',
         }),
       );
     return true;

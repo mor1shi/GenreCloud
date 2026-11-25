@@ -175,12 +175,9 @@ describe('Spotify source and end-to-end flow', () => {
       baseUrl: server.apiBase,
       intervalMs: 0,
     });
-    const results = await prefillSpotifyGenres(
-      tracks as Track[],
-      [],
-      settings,
-      { client: spotifyClient },
-    );
+    const results = await prefillSpotifyGenres(tracks as Track[], [], settings, {
+      client: spotifyClient,
+    });
     const counts = aggregateGenres(results);
     expect(counts.find((genre) => genre.name === 'Shoegaze')?.count).toBeGreaterThan(0);
     expect(counts.some((genre) => genre.sources.includes('Spotify'))).toBe(true);

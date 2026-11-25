@@ -4,17 +4,17 @@ Status: in progress. Branch: `release-prep`. Nothing is pushed or published.
 
 ## Baseline (measured before any change)
 
-| Metric | Value |
-| --- | --- |
-| Bundle JS | 396 889 B (127 084 B gzip) |
-| Bundle CSS | 85 461 B (16 170 B gzip) |
-| `dist/public` | ~680 KB |
-| Chrome ZIP | 152 104 B |
-| Firefox ZIP | 151 747 B |
-| Direct dependencies | 0 |
-| Dev dependencies | 58 |
-| `src/components` files | 56 (55 shadcn/Radix primitives) |
-| Full lookup pass, 686 tracks | ~30–35 min (measured in Firefox) |
+| Metric                          | Value                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| Bundle JS                       | 396 889 B (127 084 B gzip)                                                   |
+| Bundle CSS                      | 85 461 B (16 170 B gzip)                                                     |
+| `dist/public`                   | ~680 KB                                                                      |
+| Chrome ZIP                      | 152 104 B                                                                    |
+| Firefox ZIP                     | 151 747 B                                                                    |
+| Direct dependencies             | 0                                                                            |
+| Dev dependencies                | 58                                                                           |
+| `src/components` files          | 56 (55 shadcn/Radix primitives)                                              |
+| Full lookup pass, 686 tracks    | ~30–35 min (measured in Firefox)                                             |
 | Modeled requests for 686 tracks | 686 Discogs (2.7 s each) + 137 MusicBrainz (1.5 s each), sequential ≈ 34 min |
 
 Baseline is modeled in `bench/baseline.ts` using the same fixture as the new
@@ -58,6 +58,7 @@ bench/                  virtual-clock benchmark, mock servers
 ## Stages and acceptance criteria
 
 ### Stage 1 — rename to GenreCloud
+
 Manifest, UI, titles, package name, ZIP names, UA
 (`GenreCloud/<version> (+repo URL)`), export file name
 (`genrecloud-export.json`), neutral Gecko id. Storage key stays
@@ -68,6 +69,7 @@ Acceptance: no old names outside migration/compat code; typecheck and build
 pass.
 
 ### Stage 2 — utilitarian redesign
+
 Neutral palette + one accent, dark theme, one typeface, mono for numbers,
 single-hue cloud scale, ≤6 px radii, 1 px borders, no shadows/blur, English
 default with Russian switcher, demo data, JSON/SVG/PNG export, keyboard
@@ -77,6 +79,7 @@ Acceptance: screenshots (light/dark, 360/1280) compared against the
 "AI look" checklist; `src/components` contains only used components.
 
 ### Stage 3 — faster lookups
+
 Group by artist+album and artist, two parallel rate-limited queues, optional
 Discogs token (25→60 rpm), MusicBrainz tags from search, priority by group
 size, 1 s UI throttle, 30-day negative cache, local-only caches.
@@ -85,27 +88,32 @@ Acceptance: benchmark on identical fixtures shows ≥3× fewer virtual seconds
 than baseline; request counts recorded in `docs/PERFORMANCE.md`.
 
 ### Stage 4 — source/provider interfaces
+
 `MusicSource` and `GenreProvider` contracts; Yandex moved into an adapter
 without behavior change; Spotify isolated in its own folder; each source can
 be disabled in settings.
 
 ### Stage 5 — Spotify (experimental)
+
 Authorization Code + PKCE via `identity.launchWebAuthFlow`, user-supplied
 Client ID, tokens only in `storage.local`, 50-item pagination through saved
 tracks, per-artist `genres` with fallback, contract tests against a local
 mock server. Marked experimental in UI and README; no logo, no brand green.
 
 ### Stage 6 — security and service etiquette
+
 Minimal permissions with rationale, strict CSP, no remote code, UA verified
 in both browsers (DNR kept in the Firefox build), clear error handling for
 401/403/429, no credentials in logs.
 
 ### Stage 7 — quality
+
 Pause/resume with ETA, diagnostics copy without personal data, delete-all,
 genre synonym normalization, top-N selector, Vitest coverage of core logic,
 ESLint + Prettier, reproducible packaging with SHA-256.
 
 ### Stage 8 — repository preparation
+
 Secret/personal-data scan (tree and history), license and third-party
 notices, README (en/ru), PRIVACY, CONTRIBUTING, CoC, SECURITY, CHANGELOG,
 issue/PR templates, CI and release workflows, store listing draft,

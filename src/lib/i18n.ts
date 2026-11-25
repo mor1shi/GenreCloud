@@ -87,7 +87,8 @@ const en = {
   'diagnostics.copy': 'Copy diagnostics',
   'diagnostics.copied': 'Copied',
   'diagnostics.hint': 'Counts and error texts only. No titles, tokens or account ids.',
-  'confirm.clear': 'Delete all locally stored tracks and genres? This cannot be undone.',
+  'confirm.clear':
+    'Delete all local data (library, settings, tokens and caches)? This cannot be undone.',
   'footer.note': 'Data stays on this device. No telemetry.',
   'export.json': 'JSON',
   'export.svg': 'SVG',
@@ -185,7 +186,8 @@ const ru: Record<MessageKey, string> = {
   'diagnostics.copy': 'Скопировать диагностику',
   'diagnostics.copied': 'Скопировано',
   'diagnostics.hint': 'Только счётчики и тексты ошибок. Без названий, токенов и id аккаунта.',
-  'confirm.clear': 'Удалить все локально сохранённые треки и жанры? Отменить это нельзя.',
+  'confirm.clear':
+    'Удалить все локальные данные (библиотеку, настройки, токены и кэш)? Отменить это нельзя.',
   'footer.note': 'Данные остаются на этом устройстве. Телеметрии нет.',
   'export.json': 'JSON',
   'export.svg': 'SVG',

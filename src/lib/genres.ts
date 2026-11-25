@@ -49,7 +49,7 @@ const ALIASES: Record<string, string> = {
   'new age': 'New Age',
   'trip hop': 'Trip Hop',
   trip: 'Trip Hop',
-  'downtempo': 'Downtempo',
+  downtempo: 'Downtempo',
   'big beat': 'Big Beat',
   'deep house': 'Deep House',
   'tech house': 'Tech House',

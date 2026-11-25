@@ -104,3 +104,13 @@ export async function saveLibrary(results: TrackResult[]): Promise<void> {
 export async function clearLibrary(): Promise<void> {
   await removeLocal(LIBRARY_KEY);
 }
+
+/** Removes the library, settings (including tokens), caches and Spotify tokens. */
+export async function clearAllLocalData(): Promise<void> {
+  await removeLocal([
+    LIBRARY_KEY,
+    'genrecloud-settings-v1',
+    'genrecloud-negative-cache-v1',
+    'genrecloud-spotify-tokens-v1',
+  ]);
+}

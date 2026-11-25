@@ -7,10 +7,7 @@ import { createSpotifyClient, type SpotifyClientOptions } from './client';
 
 type ClientOverrides = Partial<Omit<SpotifyClientOptions, 'token' | 'refresh'>>;
 
-export async function createSpotifyClientFor(
-  settings: Settings,
-  overrides: ClientOverrides = {},
-) {
+export async function createSpotifyClientFor(settings: Settings, overrides: ClientOverrides = {}) {
   const deps = { clientId: settings.spotifyClientId };
   return createSpotifyClient({
     token: () => getSpotifyAccessToken(deps),

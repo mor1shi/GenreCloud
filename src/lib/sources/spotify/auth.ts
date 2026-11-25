@@ -51,9 +51,11 @@ function identityApi(): IdentityApi {
     launchWebAuthFlow: (options) =>
       new Promise((resolve, reject) => {
         chrome.launchWebAuthFlow(options, (redirect) => {
-          const runtime = (globalThis as typeof globalThis & {
-            chrome?: { runtime?: { lastError?: { message?: string } } };
-          }).chrome?.runtime;
+          const runtime = (
+            globalThis as typeof globalThis & {
+              chrome?: { runtime?: { lastError?: { message?: string } } };
+            }
+          ).chrome?.runtime;
           if (!redirect || runtime?.lastError) {
             reject(new Error(runtime?.lastError?.message ?? 'Spotify sign-in was cancelled.'));
             return;
@@ -129,7 +131,8 @@ export async function connectSpotify(deps: SpotifyAuthDeps): Promise<SpotifyToke
   const state = randomState();
   const redirectUrl = deps.redirectUrl ?? spotifyRedirectUrl();
   if (!redirectUrl) throw new Error('Redirect URL is unavailable.');
-  const launch = deps.launch ?? ((url: string) => identityApi().launchWebAuthFlow({ url, interactive: true }));
+  const launch =
+    deps.launch ?? ((url: string) => identityApi().launchWebAuthFlow({ url, interactive: true }));
 
   const params = new URLSearchParams({
     client_id: deps.clientId,

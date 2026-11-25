@@ -19,12 +19,12 @@ only when a request or rate-limit wait asks for time, so the simulated
 35-minute run completes in under a second without changing the rate-limit
 math.
 
-| Metric | Per-track baseline | Grouped (current) | Change |
-| --- | ---: | ---: | ---: |
-| Simulated duration | 1 945 200 ms (32.4 min) | 520 050 ms (8.7 min) | **3.74× faster** |
-| Discogs requests | 686 | 209 | −70 % |
-| MusicBrainz requests | 62 | 223 | +261 % |
-| Total requests | 748 | 432 | −42 % |
+| Metric               |      Per-track baseline |    Grouped (current) |           Change |
+| -------------------- | ----------------------: | -------------------: | ---------------: |
+| Simulated duration   | 1 945 200 ms (32.4 min) | 520 050 ms (8.7 min) | **3.74× faster** |
+| Discogs requests     |                     686 |                  209 |            −70 % |
+| MusicBrainz requests |                      62 |                  223 |           +261 % |
+| Total requests       |                     748 |                  432 |            −42 % |
 
 Why MusicBrainz requests grow: both queues now run **in parallel** and
 MusicBrainz is asked for every group, not only after an empty Discogs answer.

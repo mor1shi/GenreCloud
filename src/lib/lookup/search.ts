@@ -13,7 +13,12 @@ export function cleanSearchTitle(title: string): string {
     /\s+[-–—]\s+.*(?:remaster|live|version|edit|mix|demo|mono|stereo|deluxe|bonus).*$/i,
     ' ',
   );
-  return value.replace(/[.,;:!?…·•]+$/u, '').replace(/\s+/g, ' ').trim() || title.trim();
+  return (
+    value
+      .replace(/[.,;:!?…·•]+$/u, '')
+      .replace(/\s+/g, ' ')
+      .trim() || title.trim()
+  );
 }
 
 export function primaryArtist(artist: string): string {

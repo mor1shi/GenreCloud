@@ -252,8 +252,6 @@ export async function collectFavorites(): Promise<Track[]> {
   return dedupeTracks(response.tracks);
 }
 
-
-
 export function createYandexSource(): MusicSource {
   return {
     id: 'yandex',

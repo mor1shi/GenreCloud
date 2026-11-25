@@ -76,7 +76,6 @@ const YANDEX_GENRE_LABELS: Record<string, string> = {
   audiobook: 'Audiobook',
 };
 
-
 export function yandexGenreLabel(slug?: string): string | null {
   if (!slug) return null;
   const key = normalizeText(slug);

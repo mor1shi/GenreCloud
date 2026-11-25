@@ -43,12 +43,15 @@ export function groupTracks(tracks: Track[]): LookupGroup[] {
   }
 
   return [...groups.values()].sort(
-    (left, right) =>
-      right.tracks.length - left.tracks.length || left.key.localeCompare(right.key),
+    (left, right) => right.tracks.length - left.tracks.length || left.key.localeCompare(right.key),
   );
 }
 
 /** A single-track artist group can fall back to a track search. */
 export function groupTitle(group: LookupGroup): { title: string } | Record<string, never> {
-  return group.kind === 'album' ? {} : group.tracks.length === 1 ? { title: group.tracks[0].title } : {};
+  return group.kind === 'album'
+    ? {}
+    : group.tracks.length === 1
+      ? { title: group.tracks[0].title }
+      : {};
 }

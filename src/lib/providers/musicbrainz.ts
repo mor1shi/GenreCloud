@@ -76,8 +76,7 @@ export function createMusicBrainzProvider({
     const data = await search<SearchResponse>('artist', `artist:"${primaryArtist(group.artist)}"`);
     const best = (data.artists ?? []).sort(
       (left, right) =>
-        similarity(group.artist, right.name ?? '') -
-        similarity(group.artist, left.name ?? ''),
+        similarity(group.artist, right.name ?? '') - similarity(group.artist, left.name ?? ''),
     )[0];
     return tagsToHits(best?.tags);
   };

@@ -77,7 +77,10 @@ export async function createSpotifyClient({
         continue;
       }
       if (!response.ok) {
-        throw new SpotifyError(`Spotify request failed (HTTP ${response.status}).`, response.status);
+        throw new SpotifyError(
+          `Spotify request failed (HTTP ${response.status}).`,
+          response.status,
+        );
       }
       return (await response.json()) as T;
     }

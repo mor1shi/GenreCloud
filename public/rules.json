@@ -14,9 +14,7 @@
     },
     "condition": {
       "urlFilter": "||musicbrainz.org/ws/2/",
-      "resourceTypes": [
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["xmlhttprequest"]
     }
   },
   {
@@ -34,9 +32,7 @@
     },
     "condition": {
       "urlFilter": "||api.discogs.com/database/",
-      "resourceTypes": [
-        "xmlhttprequest"
-      ]
+      "resourceTypes": ["xmlhttprequest"]
     }
   }
 ]

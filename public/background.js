@@ -7,8 +7,7 @@ async function openApp() {
   const tabs = await api.tabs.query({});
   const existing = tabs.find(
     (tab) =>
-      typeof tab.id === 'number' &&
-      (tab.url === appUrl || tab.url?.startsWith(`${appUrl}#`)),
+      typeof tab.id === 'number' && (tab.url === appUrl || tab.url?.startsWith(`${appUrl}#`)),
   );
   if (existing) {
     await api.tabs.update(existing.id, { active: true });

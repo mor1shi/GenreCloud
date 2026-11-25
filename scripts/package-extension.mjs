@@ -1,13 +1,5 @@
 import { createHash } from 'node:crypto';
-import {
-  copyFile,
-  mkdir,
-  readFile,
-  readdir,
-  rm,
-  stat,
-  writeFile,
-} from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync } from 'node:zlib';
@@ -17,6 +9,8 @@ const publicDir = path.join(root, 'dist', 'public');
 const outFile = path.join(publicDir, 'genrecloud-chrome.zip');
 const devOutFile = path.join(root, 'public', 'genrecloud-chrome.zip');
 const excluded = new Set(['popup.html', 'genrecloud-chrome.zip', 'robots.txt']);
+// SOURCE_DATE_EPOCH keeps the ZIP reproducible; the default is 2020-01-01.
+const zipDate = new Date((Number(process.env.SOURCE_DATE_EPOCH) || 1_577_836_800) * 1000);
 
 async function listFiles(directory, prefix = '') {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -28,17 +22,14 @@ async function listFiles(directory, prefix = '') {
     if (entry.isDirectory()) output.push(...(await listFiles(fullPath, relative)));
     else if ((await stat(fullPath)).isFile()) output.push({ name: relative, fullPath });
   }
-  return output;
+  return output.sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function dosDateTime(date) {
   const year = Math.max(1980, date.getFullYear());
   const dosTime =
-    (date.getHours() << 11) |
-    (date.getMinutes() << 5) |
-    Math.floor(date.getSeconds() / 2);
-  const dosDate =
-    ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+    (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
+  const dosDate = ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
   return { dosTime, dosDate };
 }
 
@@ -63,7 +54,7 @@ async function makeZip(files) {
     const compressed = deflateRawSync(data, { level: 6 });
     const name = Buffer.from(file.name.replaceAll(path.sep, '/'));
     const crc = crc32(data);
-    const { dosTime, dosDate } = dosDateTime(new Date());
+    const { dosTime, dosDate } = dosDateTime(zipDate);
 
     const local = Buffer.alloc(30);
     local.writeUInt32LE(0x04034b50, 0);
@@ -126,28 +117,22 @@ if (!files.some((file) => file.name === 'index.html')) {
 const zip = await makeZip(files);
 await writeFile(outFile, zip);
 await writeFile(devOutFile, zip);
-const digest = createHash('sha256').update(zip).digest('hex').slice(0, 12);
-console.log(`Packaged ${files.length} extension files (${digest}).`);
+const digest = createHash('sha256').update(zip).digest('hex');
+console.log(`Packaged ${files.length} extension files (${digest.slice(0, 12)}).`);
 
-// Firefox has no service worker background pages and rejects DNR header
-// modifications, so it gets its own manifest and an unpacked build.
+// Firefox supports declarativeNetRequest modifyHeaders (MDN, Firefox 113+),
+// so the User-Agent rule stays in both builds. Only the background model
+// differs: Firefox uses an event page instead of a service worker.
 const firefoxDir = path.join(root, 'dist', 'firefox');
 await rm(firefoxDir, { recursive: true, force: true });
 await mkdir(firefoxDir, { recursive: true });
 for (const file of files) {
-  if (file.name === 'rules.json') continue;
   const target = path.join(firefoxDir, file.name);
   await mkdir(path.dirname(target), { recursive: true });
   await copyFile(file.fullPath, target);
 }
 
-const manifest = JSON.parse(
-  await readFile(path.join(publicDir, 'manifest.json'), 'utf8'),
-);
-manifest.permissions = (manifest.permissions ?? []).filter(
-  (permission) => permission !== 'declarativeNetRequest',
-);
-delete manifest.declarative_net_request;
+const manifest = JSON.parse(await readFile(path.join(publicDir, 'manifest.json'), 'utf8'));
 manifest.background = { scripts: ['background.js'] };
 manifest.browser_specific_settings = {
   gecko: {
@@ -155,19 +140,18 @@ manifest.browser_specific_settings = {
     strict_min_version: '128.0',
   },
 };
-await writeFile(
-  path.join(firefoxDir, 'manifest.json'),
-  `${JSON.stringify(manifest, null, 2)}\n`,
-);
+await writeFile(path.join(firefoxDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
 const firefoxFiles = await listFiles(firefoxDir);
 const firefoxZip = await makeZip(firefoxFiles);
 const firefoxOutFile = path.join(root, 'dist', 'genrecloud-firefox.zip');
 await writeFile(firefoxOutFile, firefoxZip);
-const firefoxDigest = createHash('sha256')
-  .update(firefoxZip)
-  .digest('hex')
-  .slice(0, 12);
-console.log(
-  `Packaged ${firefoxFiles.length} Firefox files (${firefoxDigest}) at dist/firefox.`,
+const firefoxDigest = createHash('sha256').update(firefoxZip).digest('hex');
+const sums = [`${digest}  genrecloud-chrome.zip`, `${firefoxDigest}  genrecloud-firefox.zip`].join(
+  '\n',
 );
+await writeFile(path.join(root, 'dist', 'SHA256SUMS.txt'), `${sums}\n`);
+console.log(
+  `Packaged ${firefoxFiles.length} Firefox files (${firefoxDigest.slice(0, 12)}) at dist/firefox.`,
+);
+console.log(sums);

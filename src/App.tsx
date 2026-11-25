@@ -33,7 +33,7 @@ import { availableSources, type SourceId } from '@/lib/sources/registry';
 import { translate, type MessageKey } from '@/lib/i18n';
 import { aggregateGenres, type CatalogSource, type TrackResult } from '@/lib/music';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '@/lib/settings';
-import { clearLibrary, isExtensionRuntime, loadLibrary, saveLibrary } from '@/lib/storage';
+import { clearAllLocalData, isExtensionRuntime, loadLibrary, saveLibrary } from '@/lib/storage';
 import { APP_VERSION } from '@/lib/version';
 
 type Phase = 'idle' | 'collecting' | 'refining';
@@ -87,7 +87,6 @@ export default function App() {
     error: '',
     redirect: '',
   });
-
 
   const dark = usePrefersDark();
   const theme: CloudTheme = dark ? 'dark' : 'light';
@@ -183,6 +182,15 @@ export default function App() {
     });
   };
 
+  const describeError = useCallback(
+    (message: string) => {
+      if (message === 'YANDEX_AUTH') return t('errors.auth');
+      if (message === 'YANDEX_RATE_LIMIT') return t('errors.rate');
+      return message;
+    },
+    [t],
+  );
+
   const runLookup = async (tracks: TrackResult['track'][], force = false) => {
     setError('');
     setPaused(false);
@@ -209,7 +217,11 @@ export default function App() {
       );
       setResults(refined);
     } catch (lookupError) {
-      setError(lookupError instanceof Error ? lookupError.message : t('errors.collectFailed'));
+      setError(
+        lookupError instanceof Error
+          ? describeError(lookupError.message)
+          : t('errors.collectFailed'),
+      );
     } finally {
       setPhase('idle');
     }
@@ -236,14 +248,21 @@ export default function App() {
       await saveLibrary(seeded);
       await runLookup(tracks);
     } catch (collectError) {
-      setError(collectError instanceof Error ? collectError.message : t('errors.collectFailed'));
+      setError(
+        collectError instanceof Error
+          ? describeError(collectError.message)
+          : t('errors.collectFailed'),
+      );
       setPhase('idle');
     }
   };
 
   const refresh = () => {
     if (!results.length) return;
-    void runLookup(results.map((result) => result.track), true);
+    void runLookup(
+      results.map((result) => result.track),
+      true,
+    );
   };
 
   const stop = () => {
@@ -279,7 +298,8 @@ export default function App() {
 
   const clearAll = async () => {
     if (!window.confirm(t('confirm.clear'))) return;
-    await clearLibrary();
+    await clearAllLocalData();
+    setSettings({ ...DEFAULT_SETTINGS });
     setResults([]);
     setDemo(false);
     setSelectedGenre(null);

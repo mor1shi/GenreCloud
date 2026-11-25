@@ -92,9 +92,7 @@ export function buildLibraryFixture(): LibraryFixture {
   return {
     tracks,
     albumGroups: albumKeys.size,
-    artistGroups: new Set(
-      tracks.filter((track) => !track.album).map((track) => track.artist),
-    ).size,
+    artistGroups: new Set(tracks.filter((track) => !track.album).map((track) => track.artist)).size,
     albumsWithoutDiscogs,
     singlesWithoutAlbum,
   };

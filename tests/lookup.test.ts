@@ -162,11 +162,7 @@ describe('lookup engine', () => {
       priority: 10,
       lookup,
     };
-    const tracks = [
-      track('1', 'A', 'One'),
-      track('2', 'A', 'One'),
-      track('3', 'A', 'Two'),
-    ];
+    const tracks = [track('1', 'A', 'One'), track('2', 'A', 'One'), track('3', 'A', 'Two')];
     const results = await refineLibrary(tracks, [], {
       providers: [provider],
       negativeCache: new NegativeCache(),
@@ -197,17 +193,13 @@ describe('lookup engine', () => {
     });
     expect(results[0].genres.map((hit) => hit.name)).toEqual(['Shoegaze']);
 
-    const seeded = await refineLibrary(
-      [{ ...track('2', 'B', 'Lost'), yandexGenre: 'pop' }],
-      [],
-      {
-        providers: [
-          { ...discogs, lookup: async () => ({ genres: [] }) },
-          { ...musicbrainz, lookup: async () => ({ genres: [] }) },
-        ],
-        negativeCache: new NegativeCache(),
-      },
-    );
+    const seeded = await refineLibrary([{ ...track('2', 'B', 'Lost'), yandexGenre: 'pop' }], [], {
+      providers: [
+        { ...discogs, lookup: async () => ({ genres: [] }) },
+        { ...musicbrainz, lookup: async () => ({ genres: [] }) },
+      ],
+      negativeCache: new NegativeCache(),
+    });
     expect(seeded[0].genres[0].name).toBe('Pop');
     expect(seeded[0].status).toBe('matched');
   });
