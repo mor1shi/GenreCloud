@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "user-agent",
+          "operation": "append",
+          "value": " GenreCloud/1.1.0 (+https://github.com/morishi/genrecloud)"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||musicbrainz.org/ws/2/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "user-agent",
+          "operation": "append",
+          "value": " GenreCloud/1.1.0 (+https://github.com/morishi/genrecloud)"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.discogs.com/database/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  }
+]
