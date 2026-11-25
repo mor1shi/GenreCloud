@@ -23,17 +23,30 @@ function normalizeWeight(count: number, max: number): number {
   return Math.log(1 + count) / Math.log(1 + max);
 }
 
-export function wordColor(weight: number, theme: CloudTheme): string {
-  const clamped = Math.min(1, Math.max(0, weight));
-  if (theme === 'dark') {
-    // Stronger = lighter on a dark surface. Kept below 90% lightness so the
-    // text never glows, and above 56% for AA contrast on #15171b.
-    const lightness = 56 + Math.round(clamped * 30);
-    return `hsl(217 58% ${lightness}%)`;
+// The classic look used a handful of ink-like hues instead of one accent, so
+// adjacent words stay distinguishable while size still carries the count.
+const WORD_HUES_LIGHT = [350, 168, 36, 218, 18];
+const WORD_HUES_DARK = [350, 165, 40, 218, 20];
+
+function wordHue(name: string): number {
+  let hash = 0;
+  for (let index = 0; index < name.length; index += 1) {
+    hash = (hash * 31 + name.charCodeAt(index)) >>> 0;
   }
-  // Stronger = darker on white: 26–41% lightness stays above 7:1 contrast.
-  const lightness = 41 - Math.round(clamped * 15);
-  return `hsl(217 52% ${lightness}%)`;
+  return hash % 5;
+}
+
+export function wordColor(weight: number, theme: CloudTheme, name = ''): string {
+  const clamped = Math.min(1, Math.max(0, weight));
+  const hue = (theme === 'dark' ? WORD_HUES_DARK : WORD_HUES_LIGHT)[wordHue(name)];
+  if (theme === 'dark') {
+    // Stronger = lighter on the dark paper; 58–82% keeps AA contrast.
+    const lightness = 58 + Math.round(clamped * 24);
+    return `hsl(${hue} 46% ${lightness}%)`;
+  }
+  // Stronger = deeper on the warm paper; 47% down to 31% stays above 5:1.
+  const lightness = 47 - Math.round(clamped * 16);
+  return `hsl(${hue} 52% ${lightness}%)`;
 }
 
 export function buildCloudWords(
@@ -49,7 +62,7 @@ export function buildCloudWords(
       count: item.count,
       weight,
       size: Math.round(minSize + weight * (maxSize - minSize)),
-      color: wordColor(weight, theme),
+      color: wordColor(weight, theme, item.name),
     };
   });
 }

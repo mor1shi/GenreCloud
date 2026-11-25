@@ -25,8 +25,9 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Project renamed to **GenreCloud**.
-- Interface rebuilt as a utilitarian tool: neutral palette, one accent color,
-  dark theme via `prefers-color-scheme`, single font family, ≤ 6 px radii.
+- Interface rebuilt: warm paper palette, multi-hue genre cloud, serif display
+  headings with italic words, compact radii; dark theme via
+  `prefers-color-scheme`, en/ru i18n.
 - Lookup is grouped by artist+album: one catalog request per group instead of
   one per track. Discogs and MusicBrainz queues run in parallel.
 - MusicBrainz genres are read from search tags, without a second lookup.

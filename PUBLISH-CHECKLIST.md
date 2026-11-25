@@ -8,9 +8,10 @@ published.
 - [x] Renamed to **GenreCloud** everywhere (UI, manifests, package name, ZIP
       names, User-Agent, export filenames). Storage key kept, schema migration
       added (`src/lib/storage-migration.ts`).
-- [x] New utilitarian UI: neutral palette, one accent, system/Inter font,
-      ≤ 6 px radii, no gradients, shadows or decorative labels; dark theme via
-      `prefers-color-scheme`; en default + ru, switch in Settings.
+- [x] Classic visual style restored on request: warm paper background, a
+      multi-hue ink palette for the cloud, serif display headings with selected
+      italic words, 12–16 px radii and the crimson pill primary button; dark
+      theme via `prefers-color-scheme`; en default + ru, switch in Settings.
 - [x] Cloud: size and single-hue intensity by frequency (log scale, stated in
       the legend), keyboard accessible, click filters the track list.
 - [x] Demo mode with a fictional library; all README screenshots use it.
@@ -119,9 +120,9 @@ published.
   is 604 kB including fonts and both manifests. Three runtime dependencies
   (React, React DOM, Lucide icons).
 - `genrecloud-chrome.zip` — 12 files, SHA-256
-  `7697f1a89c640626d6983c432e73c56cf1333a80ab5b983166d8f011c8f5b855`.
+  `1f92454ff8a20e2a3bf974f54d4d75bad6ca3052c9d1e21952be7e9b7aa0aefa`.
 - `genrecloud-firefox.zip` — 12 files, SHA-256
-  `2ddf4cc2133be8c0b6ad287314eea437637ccd9dc4dc24b49d3b124ca3b91d21`.
+  `32cd2e96da424a5842a2b9d4e1b57c75f4f5648ffe08c9ff13892f4a70ab03ae`.
   A repeated build produced the same checksums.
 - Screenshots in `docs/screenshots/` are all generated from demo data. No
   screenshot of a real library is tracked.
