@@ -24,11 +24,12 @@ import { buildCloudWords, type CloudTheme } from '@/lib/cloud';
 import { buildDemoResults } from '@/lib/demo';
 import {
   cancelLookup,
-  collectFavorites,
+  collectFromSource,
   lookupLibraryGenres,
   pauseLookup,
   resumeLookup,
 } from '@/lib/extension-runtime';
+import { availableSources, type SourceId } from '@/lib/sources/registry';
 import { translate, type MessageKey } from '@/lib/i18n';
 import { aggregateGenres, type CatalogSource, type TrackResult } from '@/lib/music';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '@/lib/settings';
@@ -79,6 +80,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [sourceId, setSourceId] = useState<SourceId>('yandex');
 
 
   const dark = usePrefersDark();
@@ -94,6 +96,7 @@ export default function App() {
     void Promise.all([loadSettings(), loadLibrary()]).then(([storedSettings, library]) => {
       if (!alive) return;
       setSettings(storedSettings);
+      setSourceId(storedSettings.enableYandex ? 'yandex' : 'spotify');
       setResults(library.results);
     });
     return () => {
@@ -169,7 +172,7 @@ export default function App() {
     setPhase('collecting');
     setProgress({ done: 0, total: 0 });
     try {
-      const tracks = await collectFavorites();
+      const tracks = await collectFromSource(sourceId, settings);
       const seeded = tracks.map((track) => ({
         track,
         genres: [],
@@ -297,6 +300,19 @@ export default function App() {
             <p className="page-subtitle">{t('page.subtitle')}</p>
           </div>
           <div className="page-actions">
+            {availableSources(settings).length > 1 && (
+              <label className="source-select">
+                <span>{t('source.label')}</span>
+                <select
+                  value={sourceId}
+                  onChange={(event) => setSourceId(event.target.value as SourceId)}
+                  disabled={busy}
+                >
+                  <option value="yandex">{t('source.yandex')}</option>
+                  <option value="spotify">{t('source.spotify')}</option>
+                </select>
+              </label>
+            )}
             <button
               type="button"
               className="primary"
