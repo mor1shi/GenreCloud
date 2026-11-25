@@ -74,9 +74,7 @@ export function aggregateGenres(results: TrackResult[]): GenreCount[] {
       const existing = counts.get(normalized);
       if (existing) {
         existing.count += 1;
-        existing.sources = Array.from(
-          new Set([...existing.sources, ...hit.sources]),
-        );
+        existing.sources = Array.from(new Set([...existing.sources, ...hit.sources]));
       } else {
         counts.set(normalized, {
           name: hit.name.trim(),
@@ -87,9 +85,7 @@ export function aggregateGenres(results: TrackResult[]): GenreCount[] {
     }
   }
 
-  return [...counts.values()].sort(
-    (a, b) => b.count - a.count || a.name.localeCompare(b.name),
-  );
+  return [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
 
 export function mergeGenreHits(

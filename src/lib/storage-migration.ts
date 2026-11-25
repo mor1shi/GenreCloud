@@ -33,7 +33,8 @@ function migrateTrack(value: unknown): Track | null {
   const title = asString(value.title).trim();
   const artist = asString(value.artist).trim();
   if (!title || !artist) return null;
-  const source = value.source === 'spotify' ? 'spotify' : value.source === 'yandex' ? 'yandex' : 'yandex';
+  const source =
+    value.source === 'spotify' ? 'spotify' : value.source === 'yandex' ? 'yandex' : 'yandex';
   return {
     id: asString(value.id),
     title,

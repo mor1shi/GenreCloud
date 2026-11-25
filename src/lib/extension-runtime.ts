@@ -25,17 +25,19 @@ type ChromeExtensionApi = {
   runtime?: { id?: string; lastError?: { message?: string } };
   tabs?: {
     query: (query: TabQuery, callback: (tabs: ExtensionTab[]) => void) => void;
-    sendMessage: (tabId: number, message: { type: string }, callback: (response: unknown) => void) => void;
+    sendMessage: (
+      tabId: number,
+      message: { type: string },
+      callback: (response: unknown) => void,
+    ) => void;
   };
   scripting?: {
-    executeScript: (
-      injection: {
-        target: { tabId: number };
-        world?: 'MAIN' | 'ISOLATED';
-        func: (base: string) => Promise<PageLikesResult>;
-        args?: unknown[];
-      },
-    ) => Promise<Array<{ result?: PageLikesResult }>>;
+    executeScript: (injection: {
+      target: { tabId: number };
+      world?: 'MAIN' | 'ISOLATED';
+      func: (base: string) => Promise<PageLikesResult>;
+      args?: unknown[];
+    }) => Promise<Array<{ result?: PageLikesResult }>>;
   };
   storage?: { local?: StorageArea };
 };
@@ -157,9 +159,7 @@ async function readLikesInPage(base: string): Promise<PageLikesResult> {
     if (!uid) {
       throw new Error('Войдите в аккаунт Яндекс Музыки и повторите сбор.');
     }
-    const likes = await request(
-      `/users/${encodeURIComponent(String(uid))}/likes/tracks`,
-    );
+    const likes = await request(`/users/${encodeURIComponent(String(uid))}/likes/tracks`);
     const items: Array<{ id?: string | number }> =
       likes?.result?.library?.tracks ?? likes?.result?.tracks ?? [];
     const ids = items
@@ -167,12 +167,8 @@ async function readLikesInPage(base: string): Promise<PageLikesResult> {
       .filter(Boolean);
     const tracks: Track[] = [];
     for (let index = 0; index < ids.length; index += 50) {
-      const idsParam = encodeURIComponent(
-        ids.slice(index, index + 50).join(','),
-      );
-      const data = await request(
-        `/tracks?track-ids=${idsParam}&with-positions=false`,
-      );
+      const idsParam = encodeURIComponent(ids.slice(index, index + 50).join(','));
+      const data = await request(`/tracks?track-ids=${idsParam}&with-positions=false`);
       for (const track of data?.result ?? []) {
         const album = track.albums?.[0] ?? track.album;
         const title = clean(track.title);
@@ -206,17 +202,16 @@ function apiBaseForTab(url: string | undefined): string {
     : 'https://api.music.yandex.ru';
 }
 
-async function readLikesFromPage(
-  tabId: number,
-  base: string,
-): Promise<Track[] | null> {
+async function readLikesFromPage(tabId: number, base: string): Promise<Track[] | null> {
   // Firefox exposes the scripting API as browser.scripting (promise-based)
   // and leaves chrome.scripting empty, while Chrome has the promise form on
   // chrome.scripting. Both resolve to the same call.
   const scripting =
-    (globalThis as typeof globalThis & {
-      browser?: { scripting?: ChromeExtensionApi['scripting'] };
-    }).browser?.scripting ?? getExtensionApi()?.scripting;
+    (
+      globalThis as typeof globalThis & {
+        browser?: { scripting?: ChromeExtensionApi['scripting'] };
+      }
+    ).browser?.scripting ?? getExtensionApi()?.scripting;
   if (!scripting?.executeScript) return null;
   try {
     const timeout = new Promise<never>((_, reject) => {
@@ -255,9 +250,7 @@ export async function collectFavorites(): Promise<Track[]> {
   }
 
   const tabsApi = api.tabs;
-  const allTabs = await callApi<ExtensionTab[]>((callback) =>
-    tabsApi.query({}, callback),
-  );
+  const allTabs = await callApi<ExtensionTab[]>((callback) => tabsApi.query({}, callback));
   const musicTabs = allTabs.filter(
     (item) => typeof item.id === 'number' && YANDEX_MUSIC_URL.test(item.url ?? ''),
   );
@@ -270,17 +263,13 @@ export async function collectFavorites(): Promise<Track[]> {
   const [activeTab] = await callApi<ExtensionTab[]>((callback) =>
     tabsApi.query({ active: true, currentWindow: true }, callback),
   );
-  const tab =
-    musicTabs.find((item) => item.id === activeTab?.id) ?? musicTabs[0];
+  const tab = musicTabs.find((item) => item.id === activeTab?.id) ?? musicTabs[0];
   const tabId = tab?.id;
   if (typeof tabId !== 'number') {
     throw new Error('Не удалось определить вкладку Яндекс Музыки.');
   }
 
-  const pageTracks = await readLikesFromPage(
-    tabId,
-    apiBaseForTab(tab?.url),
-  );
+  const pageTracks = await readLikesFromPage(tabId, apiBaseForTab(tab?.url));
   if (pageTracks?.length) {
     return dedupeTracks(pageTracks);
   }
@@ -337,12 +326,8 @@ export async function lookupLibraryGenres(
 ): Promise<TrackResult[]> {
   lookupCancelled = false;
   const existing = await loadStoredLibrary().catch(() => migrateLibrary(null));
-  const byId = new Map(
-    existing.results.map((result) => [stableTrackId(result.track), result]),
-  );
-  const uniqueTracks = [
-    ...new Map(tracks.map((track) => [stableTrackId(track), track])).values(),
-  ];
+  const byId = new Map(existing.results.map((result) => [stableTrackId(result.track), result]));
+  const uniqueTracks = [...new Map(tracks.map((track) => [stableTrackId(track), track])).values()];
 
   // Phase 1 — instant map. Yandex ships one genre per album, so every track
   // already has a label and the cloud renders in a second instead of waiting
@@ -373,10 +358,7 @@ export async function lookupLibraryGenres(
   onProgress?.(done, uniqueTracks.length);
 
   let processedSinceSave = 0;
-  const snapshot = () =>
-    uniqueTracks
-      .map((item) => byId.get(stableTrackId(item))!)
-      .filter(Boolean);
+  const snapshot = () => uniqueTracks.map((item) => byId.get(stableTrackId(item))!).filter(Boolean);
   for (const track of pending) {
     if (lookupCancelled) break;
     // A hard per-track cap keeps the UI honest: three retries on two

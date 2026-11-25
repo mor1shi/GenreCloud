@@ -11,9 +11,7 @@ type MusicBrainzRecording = {
   id?: string;
   title?: string;
   score?: number;
-  'artist-credit'?: Array<
-    string | { name?: string; artist?: { id?: string; name?: string } }
-  >;
+  'artist-credit'?: Array<string | { name?: string; artist?: { id?: string; name?: string } }>;
   genres?: Array<{ name?: string }>;
 };
 
@@ -133,9 +131,7 @@ export function yandexGenreLabel(slug?: string): string | null {
   const mapped = YANDEX_GENRE_LABELS[key];
   if (mapped) return mapped;
   if (!/^[\p{L}\p{N}][\p{L}\p{N}\s-]*$/u.test(key)) return null;
-  return key
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
+  return key.replace(/[-_]+/g, ' ').replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
 }
 
 export function seedTrackResult(track: Track): TrackResult {
@@ -169,11 +165,7 @@ function retryDelay(attempt: number): number {
   return Math.min(8000, 700 * 2 ** (attempt - 1)) + Math.random() * 250;
 }
 
-async function requestJson<T>(
-  source: RemoteSource,
-  url: string,
-  timeoutMs = 15000,
-): Promise<T> {
+async function requestJson<T>(source: RemoteSource, url: string, timeoutMs = 15000): Promise<T> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     await waitForSlot(source);
     const controller = new AbortController();
@@ -192,9 +184,7 @@ async function requestJson<T>(
       if (status === 429) {
         const retryAfter = Number(response.headers.get('Retry-After'));
         const seconds =
-          Number.isFinite(retryAfter) && retryAfter > 0
-            ? Math.min(retryAfter, 30)
-            : 4;
+          Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 30) : 4;
         cooldownUntil[source] = Date.now() + seconds * 1000;
         throw new Error(`${source}: лимит запросов, повторяем через ${seconds} с.`);
       }
@@ -208,9 +198,7 @@ async function requestJson<T>(
     } catch (error) {
       if (error instanceof FatalRequestError) throw error;
       if (attempt === MAX_ATTEMPTS) {
-        throw error instanceof Error
-          ? error
-          : new Error(`${source}: запрос не удался.`);
+        throw error instanceof Error ? error : new Error(`${source}: запрос не удался.`);
       }
       await pause(retryDelay(attempt));
     } finally {
@@ -255,9 +243,7 @@ function cleanGenres(values: Array<string | undefined>): string[] {
 
 function artistCredit(recording: MusicBrainzRecording): string {
   return (recording['artist-credit'] ?? [])
-    .map((item) =>
-      typeof item === 'string' ? item : item.name ?? item.artist?.name ?? '',
-    )
+    .map((item) => (typeof item === 'string' ? item : (item.name ?? item.artist?.name ?? '')))
     .filter(Boolean)
     .join(' ');
 }
@@ -348,10 +334,7 @@ async function lookupDiscogs(track: Track): Promise<CatalogResult> {
       ...(candidate.release.genre ?? []),
     ]);
     if (!genres.length && candidate.release.resource_url) {
-      const details = await requestJson<DiscogsRelease>(
-        'Discogs',
-        candidate.release.resource_url,
-      );
+      const details = await requestJson<DiscogsRelease>('Discogs', candidate.release.resource_url);
       genres = cleanGenres([...(details.style ?? []), ...(details.genre ?? [])]);
     }
     return { genres };
