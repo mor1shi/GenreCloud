@@ -93,6 +93,27 @@ export function SettingsPanel({ open, settings, onClose, onPatch, redirectUrl, s
           </section>
 
           <section className="field">
+            <h3>{t('settings.sources')}</h3>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={settings.enableYandex}
+                onChange={(event) => onPatch({ enableYandex: event.target.checked })}
+              />
+              {t('source.yandex')}
+            </label>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={settings.enableSpotify}
+                onChange={(event) => onPatch({ enableSpotify: event.target.checked })}
+              />
+              {t('source.spotify')}
+            </label>
+            <p className="hint">{t('settings.sources.hint')}</p>
+          </section>
+
+          <section className="field">
             <h3>{t('settings.discogs.title')}</h3>
             <p className="hint">{t('settings.discogs.body')}</p>
             <label htmlFor="settings-discogs-token">{t('settings.discogs.token')}</label>

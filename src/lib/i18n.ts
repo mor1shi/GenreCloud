@@ -63,6 +63,8 @@ const en = {
     'A personal token raises the limit from 25 to 60 requests per minute. Create one in Discogs → Settings → Developers.',
   'settings.discogs.token': 'Token',
   'settings.discogs.hint': 'Stored only in this browser. Never logged or exported.',
+  'settings.sources': 'Library sources',
+  'settings.sources.hint': 'Only enabled sources are collected.',
   'settings.spotify.title': 'Spotify (experimental)',
   'settings.spotify.body':
     'Use your own Client ID from the Spotify Developer Dashboard. Development mode requires Premium on the owner account and limits the app to 5 users. Add {redirect} as a redirect URI.',
@@ -159,6 +161,8 @@ const ru: Record<MessageKey, string> = {
     'Личный токен поднимает лимит с 25 до 60 запросов в минуту. Создайте его в Discogs → Settings → Developers.',
   'settings.discogs.token': 'Токен',
   'settings.discogs.hint': 'Хранится только в этом браузере. Не логируется и не экспортируется.',
+  'settings.sources': 'Источники библиотеки',
+  'settings.sources.hint': 'Собираются только включённые источники.',
   'settings.spotify.title': 'Spotify (экспериментально)',
   'settings.spotify.body':
     'Используйте свой Client ID из Spotify Developer Dashboard. В Development Mode владельцу нужен Premium, а приложение ограничено 5 пользователями. Добавьте {redirect} как redirect URI.',

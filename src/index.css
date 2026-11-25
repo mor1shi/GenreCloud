@@ -781,3 +781,10 @@ h3 {
   border-radius: var(--radius);
   padding: 6px 8px;
 }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}

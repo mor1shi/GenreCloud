@@ -81,6 +81,12 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [paused, setPaused] = useState(false);
   const [sourceId, setSourceId] = useState<SourceId>('yandex');
+  const [spotifyState, setSpotifyState] = useState({
+    connected: false,
+    busy: false,
+    error: '',
+    redirect: '',
+  });
 
 
   const dark = usePrefersDark();
@@ -107,6 +113,52 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    let alive = true;
+    void import('@/lib/sources/spotify')
+      .then(async (spotify) => {
+        const redirect = spotify.spotifyRedirectUrl();
+        const connected = await spotify.isSpotifyConnected().catch(() => false);
+        if (alive) setSpotifyState((current) => ({ ...current, redirect, connected }));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    if (!settings.enableYandex && settings.enableSpotify) setSourceId('spotify');
+    if (settings.enableYandex && !settings.enableSpotify) setSourceId('yandex');
+  }, [settings.enableYandex, settings.enableSpotify]);
+
+  const connectSpotify = async () => {
+    setSpotifyState((current) => ({ ...current, busy: true, error: '' }));
+    try {
+      const spotify = await import('@/lib/sources/spotify');
+      await spotify.connectSpotify({ clientId: settings.spotifyClientId.trim() });
+      setSpotifyState((current) => ({ ...current, busy: false, connected: true }));
+    } catch (connectError) {
+      setSpotifyState((current) => ({
+        ...current,
+        busy: false,
+        error: connectError instanceof Error ? connectError.message : 'Spotify sign-in failed.',
+      }));
+    }
+  };
+
+  const disconnectSpotify = async () => {
+    setSpotifyState((current) => ({ ...current, busy: true, error: '' }));
+    try {
+      const spotify = await import('@/lib/sources/spotify');
+      await spotify.disconnectSpotify();
+      setSpotifyState((current) => ({ ...current, busy: false, connected: false }));
+    } catch {
+      setSpotifyState((current) => ({ ...current, busy: false }));
+    }
+  };
 
   useEffect(() => {
     if (!copied) return;
@@ -141,6 +193,7 @@ export default function App() {
         tracks,
         settings,
         {
+          onNotice: (message) => setError(message),
           onProgress: (done, total) =>
             setProgress({
               done,
@@ -583,6 +636,14 @@ export default function App() {
         settings={settings}
         onClose={() => setSettingsOpen(false)}
         onPatch={patchSettings}
+        redirectUrl={spotifyState.redirect || undefined}
+        spotify={{
+          connected: spotifyState.connected,
+          busy: spotifyState.busy,
+          error: spotifyState.error || undefined,
+          onConnect: () => void connectSpotify(),
+          onDisconnect: () => void disconnectSpotify(),
+        }}
       />
     </div>
   );

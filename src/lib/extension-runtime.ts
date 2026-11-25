@@ -46,6 +46,7 @@ async function waitWhilePaused(): Promise<void> {
 export type LookupCallbacks = {
   onProgress?: (done: number, total: number) => void;
   onPartial?: (results: TrackResult[]) => void;
+  onNotice?: (message: string) => void;
 };
 
 /**
@@ -87,7 +88,7 @@ function throttlePartial(callback?: (results: TrackResult[]) => void) {
 export async function lookupLibraryGenres(
   tracks: Track[],
   settings: Settings,
-  { onProgress, onPartial }: LookupCallbacks = {},
+  { onProgress, onPartial, onNotice }: LookupCallbacks = {},
   { force = false }: { force?: boolean } = {},
 ): Promise<TrackResult[]> {
   const library = await loadLibrary().catch(() => ({ results: [] }) as { results: TrackResult[] });
@@ -113,9 +114,26 @@ export async function lookupLibraryGenres(
   const emitPartial = throttlePartial(onPartial);
 
   try {
+    let existing = library.results;
+    if (settings.enableSpotify && tracks.some((track) => track.source === 'spotify')) {
+      try {
+        const { prefillSpotifyGenres } = await import('./sources/spotify/prefill');
+        existing = await prefillSpotifyGenres(tracks, existing, settings, {
+          onPartial: emitPartial,
+        });
+        await saveLibrary(existing);
+      } catch (error) {
+        onNotice?.(
+          error instanceof Error
+            ? `Spotify genres are unavailable: ${error.message}`
+            : 'Spotify genres are unavailable.',
+        );
+      }
+    }
+
     return await refineLibrary(
       tracks,
-      library.results,
+      existing,
       { providers, negativeCache, force, saveEveryGroups: 5, gate: waitWhilePaused },
       {
         onProgress,

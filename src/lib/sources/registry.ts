@@ -9,8 +9,12 @@ export type { MusicSource, SourceId } from './types';
  * and its branch below removes the integration without touching the rest of
  * the application.
  */
-export async function createSource(id: SourceId, _settings: Settings): Promise<MusicSource> {
+export async function createSource(id: SourceId, settings: Settings): Promise<MusicSource> {
   if (id === 'yandex') return createYandexSource();
+  if (id === 'spotify') {
+    const { createSpotifySource } = await import('./spotify');
+    return createSpotifySource(settings);
+  }
   throw new Error(`Unknown source: ${String(id)}`);
 }
 
