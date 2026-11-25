@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/morishi/genrecloud.git"
+    "url": "https://github.com/mor1shi/GenreCloud.git"
   },
   "keywords": [
     "browser-extension",
@@ -53,8 +53,8 @@
     "vite": "^7.3.8",
     "vitest": "^4.0.13"
   },
-  "homepage": "https://github.com/morishi/genrecloud#readme",
+  "homepage": "https://github.com/mor1shi/GenreCloud#readme",
   "bugs": {
-    "url": "https://github.com/morishi/genrecloud/issues"
+    "url": "https://github.com/mor1shi/GenreCloud/issues"
   }
 }

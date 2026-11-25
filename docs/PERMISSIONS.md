@@ -46,7 +46,7 @@ base-uri 'none'; form-action 'none'
 
 ## User-Agent header
 
-`rules.json` appends `GenreCloud/1.1.0 (+https://github.com/morishi/genrecloud)`
+`rules.json` appends `GenreCloud/1.1.0 (+https://github.com/mor1shi/GenreCloud)`
 to requests matching:
 
 - `||musicbrainz.org/ws/2/`
@@ -66,7 +66,7 @@ a real browser profile. To verify:
 3. In DevTools → Network, open a `musicbrainz.org` request and a
    `api.discogs.com` request.
 4. Confirm the `User-Agent` request header ends with
-   `GenreCloud/1.1.0 (+https://github.com/morishi/genrecloud)`.
+   `GenreCloud/1.1.0 (+https://github.com/mor1shi/GenreCloud)`.
 
 Repeat in Firefox (`about:debugging`) — the DNR rule is part of the Firefox
 manifest, not only the Chrome one.

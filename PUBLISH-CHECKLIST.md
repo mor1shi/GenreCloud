@@ -52,7 +52,7 @@ published.
   builds and matches MDN's requirements, but the final header was not captured
   in Firefox or Chrome. Manual check: open DevTools → Network → request to
   `musicbrainz.org`, confirm the UA ends with
-  `GenreCloud/1.1.0 (+https://github.com/morishi/genrecloud)`.
+  `GenreCloud/1.1.0 (+https://github.com/mor1shi/GenreCloud)`.
 - **Live Yandex Music collection after the rewrite.** The collection code is
   unchanged in behaviour and was tested in the previous release; it was not
   re-run against a real account during this preparation.
@@ -90,7 +90,7 @@ published.
    non-commercial (no donations tied to the catalog data, no paid builds) and
    that `THIRD_PARTY_NOTICES.md` wording is acceptable.
 6. **Repository URL and maintainer identity.** The manifests' User-Agent and
-   `package.json` point to `https://github.com/morishi/genrecloud`. Change the
+   `package.json` point to `https://github.com/mor1shi/GenreCloud`. Change the
    owner/repo if the final location differs — it appears in DNR rules,
    `package.json`, README badges and the Spotify instructions.
 7. **History and first push.** The repository was created fresh in
@@ -119,9 +119,9 @@ published.
   is 604 kB including fonts and both manifests. Three runtime dependencies
   (React, React DOM, Lucide icons).
 - `genrecloud-chrome.zip` — 12 files, SHA-256
-  `f2ff27a44d587289327273f7630dda21c10537ae9ceaa98b552fbc096f532aa8`.
+  `7697f1a89c640626d6983c432e73c56cf1333a80ab5b983166d8f011c8f5b855`.
 - `genrecloud-firefox.zip` — 12 files, SHA-256
-  `d9a32e4ff3159063e811fbd886f98412440ca607ac71af963cc41a188896cf2d`.
+  `2ddf4cc2133be8c0b6ad287314eea437637ccd9dc4dc24b49d3b124ca3b91d21`.
   A repeated build produced the same checksums.
 - Screenshots in `docs/screenshots/` are all generated from demo data. No
   screenshot of a real library is tracked.

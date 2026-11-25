@@ -1,6 +1,6 @@
 # GenreCloud
 
-[![CI](https://github.com/morishi/genrecloud/actions/workflows/ci.yml/badge.svg)](https://github.com/morishi/genrecloud/actions/workflows/ci.yml)
+[![CI](https://github.com/mor1shi/GenreCloud/actions/workflows/ci.yml/badge.svg)](https://github.com/mor1shi/GenreCloud/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Расширение для браузера, которое строит облако жанров по сохранённым
