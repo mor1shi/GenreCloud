@@ -512,7 +512,7 @@
     lastApiFailure = apiError instanceof Error ? apiError.message : String(apiError);
     try {
       console.warn(
-        '[Жанрограф] Не удалось прочитать коллекцию через API, использую прокрутку страницы:',
+        '[GenreCloud] Не удалось прочитать коллекцию через API, использую прокрутку страницы:',
         apiError,
       );
       return await readFavoritesViaDom();

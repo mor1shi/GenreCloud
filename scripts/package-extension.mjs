@@ -6,7 +6,7 @@ import { deflateRawSync } from 'node:zlib';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publicDir = path.join(root, 'dist', 'public');
-const outFile = path.join(publicDir, 'genrecloud-chrome.zip');
+const outFile = path.join(root, 'dist', 'genrecloud-chrome.zip');
 const devOutFile = path.join(root, 'public', 'genrecloud-chrome.zip');
 const excluded = new Set(['popup.html', 'genrecloud-chrome.zip', 'robots.txt']);
 // SOURCE_DATE_EPOCH keeps the ZIP reproducible; the default is 2020-01-01.

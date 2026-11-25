@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build extension packages
+        run: npm run build
+        env:
+          SOURCE_DATE_EPOCH: '1577836800'
+      - name: Verify archive checksums
+        run: |
+          cd dist
+          sha256sum -c SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/genrecloud-chrome.zip
+            dist/genrecloud-firefox.zip
+            dist/SHA256SUMS.txt
+          generate_release_notes: true

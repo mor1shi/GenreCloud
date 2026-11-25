@@ -244,13 +244,15 @@ describe('lookup engine', () => {
         gateCalls += 1;
         release = resolve;
       });
-    const lookup = vi.fn(async () => ({ genres: [{ name: 'Rock', sources: ['Discogs' as const] }] }));
+    const lookup = vi.fn(async () => ({
+      genres: [{ name: 'Rock', sources: ['Discogs' as const] }],
+    }));
     const provider: GenreProvider = { id: 'discogs', label: 'Discogs', priority: 10, lookup };
-    const work = refineLibrary(
-      [track('1', 'A', 'One')],
-      [],
-      { providers: [provider], negativeCache: new NegativeCache(), gate },
-    );
+    const work = refineLibrary([track('1', 'A', 'One')], [], {
+      providers: [provider],
+      negativeCache: new NegativeCache(),
+      gate,
+    });
     await new Promise((resolve) => setImmediate(resolve));
     expect(gateCalls).toBe(1);
     expect(lookup).not.toHaveBeenCalled();

@@ -7,3 +7,8 @@ public/*.zip
 .env.*
 !.env.example
 .shots/
+
+# local exports and IDE files
+genrecloud-export.json
+.vscode/
+.idea/
