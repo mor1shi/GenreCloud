@@ -749,3 +749,18 @@ h3 {
     padding: 0 8px;
   }
 }
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.row-actions button {
+  flex: 1;
+}

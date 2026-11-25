@@ -1,6 +1,12 @@
 import type { Track, TrackResult } from './music';
-import { lookupTrackGenres, seedTrackResult } from './catalog-service';
 import { stableTrackId } from './music';
+import { refineLibrary } from './lookup/engine';
+import { NegativeCache, type NegativeState } from './lookup/negative-cache';
+import { RateLimiter } from './lookup/rate-limiter';
+import { createDiscogsProvider } from './providers/discogs';
+import { createMusicBrainzProvider } from './providers/musicbrainz';
+import type { Settings } from './settings';
+import { loadLibrary, readLocal, saveLibrary, writeLocal } from './storage';
 import {
   LIBRARY_KEY,
   LIBRARY_SCHEMA_VERSION,
@@ -313,76 +319,118 @@ export async function collectFavorites(): Promise<Track[]> {
   return dedupeTracks(response.tracks);
 }
 
-let lookupCancelled = false;
+const NEGATIVE_KEY = 'genrecloud-negative-cache-v1';
+
+let activeController: AbortController | null = null;
+let paused = false;
+const gateWaiters: Array<() => void> = [];
+
+export function pauseLookup(): void {
+  paused = true;
+}
+
+export function resumeLookup(): void {
+  paused = false;
+  for (const resolve of gateWaiters.splice(0)) resolve();
+}
 
 export function cancelLookup(): void {
-  lookupCancelled = true;
+  resumeLookup();
+  activeController?.abort();
+}
+
+async function waitWhilePaused(): Promise<void> {
+  while (paused) {
+    await new Promise<void>((resolve) => gateWaiters.push(resolve));
+  }
+}
+
+export type LookupCallbacks = {
+  onProgress?: (done: number, total: number) => void;
+  onPartial?: (results: TrackResult[]) => void;
+};
+
+/**
+ * Re-rendering the cloud on every provider response would make the page janky
+ * while two queues are reporting in parallel, so partial updates are capped at
+ * one per second (leading edge fires immediately).
+ */
+function throttlePartial(callback?: (results: TrackResult[]) => void) {
+  let last = 0;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let pending: TrackResult[] | null = null;
+  const flush = () => {
+    timer = null;
+    if (!pending || !callback) return;
+    last = Date.now();
+    const value = pending;
+    pending = null;
+    callback(value);
+  };
+  const emit = (results: TrackResult[]) => {
+    if (!callback) return;
+    const now = Date.now();
+    if (now - last >= 1000) {
+      last = now;
+      callback(results);
+      return;
+    }
+    pending = results;
+    if (!timer) timer = setTimeout(flush, 1000 - (now - last));
+  };
+  emit.stop = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    pending = null;
+  };
+  return emit;
 }
 
 export async function lookupLibraryGenres(
   tracks: Track[],
-  onProgress?: (done: number, total: number) => void,
-  onPartial?: (results: TrackResult[]) => void,
+  settings: Settings,
+  { onProgress, onPartial }: LookupCallbacks = {},
+  { force = false }: { force?: boolean } = {},
 ): Promise<TrackResult[]> {
-  lookupCancelled = false;
-  const existing = await loadStoredLibrary().catch(() => migrateLibrary(null));
-  const byId = new Map(existing.results.map((result) => [stableTrackId(result.track), result]));
-  const uniqueTracks = [...new Map(tracks.map((track) => [stableTrackId(track), track])).values()];
+  const library = await loadLibrary().catch(() => ({ results: [] }) as { results: TrackResult[] });
+  const storedCache = await readLocal<NegativeState>(NEGATIVE_KEY).catch(() => undefined);
+  const negativeCache = new NegativeCache(storedCache);
+  negativeCache.prune();
 
-  // Phase 1 — instant map. Yandex ships one genre per album, so every track
-  // already has a label and the cloud renders in a second instead of waiting
-  // for the rate-limited catalogs.
-  const seeded = uniqueTracks.map((track) => {
-    const key = stableTrackId(track);
-    const cached = byId.get(key);
-    if (cached && (cached.genres.length > 0 || cached.checked)) {
-      const refreshed = { ...cached, track };
-      byId.set(key, refreshed);
-      return refreshed;
-    }
-    const seed = seedTrackResult(track);
-    byId.set(key, seed);
-    return seed;
-  });
-  onPartial?.(seeded);
-  await saveStoredLibrary(seeded.filter(Boolean));
+  const controller = new AbortController();
+  activeController = controller;
 
-  const pending = uniqueTracks.filter((track) => {
-    const result = byId.get(stableTrackId(track));
-    if (!result) return true;
-    // Seeds are always refined; already matched catalog results are reused.
-    if (result.checked === false) return true;
-    return !result.checked && result.genres.length === 0;
-  });
-  let done = uniqueTracks.length - pending.length;
-  onProgress?.(done, uniqueTracks.length);
+  // A personal Discogs token raises the limit to 60 requests per minute.
+  // Without one, 25/min is the documented ceiling; 2.4 s keeps a margin.
+  const providers = [
+    createDiscogsProvider({
+      limiter: new RateLimiter({ intervalMs: settings.discogsToken ? 1050 : 2400 }),
+      token: settings.discogsToken || undefined,
+    }),
+    createMusicBrainzProvider({
+      limiter: new RateLimiter({ intervalMs: 1100 }),
+    }),
+  ];
 
-  let processedSinceSave = 0;
-  const snapshot = () => uniqueTracks.map((item) => byId.get(stableTrackId(item))!).filter(Boolean);
-  for (const track of pending) {
-    if (lookupCancelled) break;
-    // A hard per-track cap keeps the UI honest: three retries on two
-    // rate-limited services can otherwise stall a single track for minutes.
-    const result = await Promise.race([
-      lookupTrackGenres(track),
-      new Promise<TrackResult>((resolve) =>
-        setTimeout(() => resolve(seedTrackResult(track)), 45000),
-      ),
-    ]);
-    byId.set(stableTrackId(track), result);
-    done += 1;
-    processedSinceSave += 1;
-    onProgress?.(done, uniqueTracks.length);
-    if (processedSinceSave >= 5 || done === uniqueTracks.length) {
-      processedSinceSave = 0;
-      const current = snapshot();
-      await saveStoredLibrary(current);
-      onPartial?.(current);
-    }
+  const emitPartial = throttlePartial(onPartial);
+
+  try {
+    return await refineLibrary(
+      tracks,
+      library.results,
+      { providers, negativeCache, force, saveEveryGroups: 5, gate: waitWhilePaused },
+      {
+        onProgress,
+        onPartial: emitPartial,
+        onSave: saveLibrary,
+        signal: controller.signal,
+      },
+    );
+  } finally {
+    paused = false;
+    emitPartial.stop();
+    negativeCache.prune();
+    await writeLocal(NEGATIVE_KEY, negativeCache.toState()).catch(() => undefined);
+    activeController = null;
   }
-
-  const finalResults = snapshot();
-  await saveStoredLibrary(finalResults);
-
-  return finalResults;
 }

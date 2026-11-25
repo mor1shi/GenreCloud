@@ -22,7 +22,13 @@ import {
 } from '@/lib/export';
 import { buildCloudWords, type CloudTheme } from '@/lib/cloud';
 import { buildDemoResults } from '@/lib/demo';
-import { cancelLookup, collectFavorites, lookupLibraryGenres } from '@/lib/extension-runtime';
+import {
+  cancelLookup,
+  collectFavorites,
+  lookupLibraryGenres,
+  pauseLookup,
+  resumeLookup,
+} from '@/lib/extension-runtime';
 import { translate, type MessageKey } from '@/lib/i18n';
 import { aggregateGenres, type CatalogSource, type TrackResult } from '@/lib/music';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '@/lib/settings';
@@ -30,7 +36,7 @@ import { clearLibrary, isExtensionRuntime, loadLibrary, saveLibrary } from '@/li
 import { APP_VERSION } from '@/lib/version';
 
 type Phase = 'idle' | 'collecting' | 'refining';
-type Progress = { done: number; total: number };
+type Progress = { done: number; total: number; eta?: number };
 
 function usePrefersDark(): boolean {
   const [dark, setDark] = useState(
@@ -72,6 +78,8 @@ export default function App() {
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [paused, setPaused] = useState(false);
+
 
   const dark = usePrefersDark();
   const theme: CloudTheme = dark ? 'dark' : 'light';
@@ -120,14 +128,28 @@ export default function App() {
     });
   };
 
-  const runLookup = async (tracks: TrackResult['track'][]) => {
+  const runLookup = async (tracks: TrackResult['track'][], force = false) => {
     setError('');
+    setPaused(false);
+    const started = Date.now();
     setPhase('refining');
     try {
       const refined = await lookupLibraryGenres(
         tracks,
-        (done, total) => setProgress({ done, total }),
-        (partial) => setResults(partial),
+        settings,
+        {
+          onProgress: (done, total) =>
+            setProgress({
+              done,
+              total,
+              eta:
+                done > 0 && total > done
+                  ? Math.round(((Date.now() - started) / done / 1000) * (total - done))
+                  : 0,
+            }),
+          onPartial: (partial) => setResults(partial),
+        },
+        { force },
       );
       setResults(refined);
     } catch (lookupError) {
@@ -165,12 +187,25 @@ export default function App() {
 
   const refresh = () => {
     if (!results.length) return;
-    void runLookup(results.map((result) => result.track));
+    void runLookup(results.map((result) => result.track), true);
   };
 
   const stop = () => {
     cancelLookup();
+    setPaused(false);
   };
+
+  const togglePause = () => {
+    if (paused) {
+      resumeLookup();
+      setPaused(false);
+    } else {
+      pauseLookup();
+      setPaused(true);
+    }
+  };
+
+  const etaSeconds = progress.eta ?? 0;
 
   const showDemo = () => {
     setDemo(true);
@@ -353,10 +388,12 @@ export default function App() {
                   <div className="progress-label">
                     {phase === 'collecting'
                       ? t('progress.building')
-                      : t('progress.tracks', {
-                          done: progress.done,
-                          total: progress.total,
-                        })}
+                      : paused
+                        ? t('progress.paused')
+                        : t('progress.groups', {
+                            done: progress.done,
+                            total: progress.total,
+                          })}
                   </div>
                   <div
                     className="bar"
@@ -368,9 +405,25 @@ export default function App() {
                     <span style={{ width: `${progress.total ? progressPercent : 100}%` }} />
                   </div>
                   {phase === 'refining' && (
-                    <button type="button" onClick={stop}>
-                      {t('actions.stop')}
-                    </button>
+                    <>
+                      {etaSeconds > 0 && (
+                        <p className="hint">
+                          {etaSeconds < 60
+                            ? t('progress.etaSoon')
+                            : t('progress.eta', {
+                                time: `${Math.round(etaSeconds / 60)} min`,
+                              })}
+                        </p>
+                      )}
+                      <div className="row-actions">
+                        <button type="button" onClick={togglePause}>
+                          {paused ? t('actions.resume') : t('actions.pause')}
+                        </button>
+                        <button type="button" onClick={stop}>
+                          {t('actions.stop')}
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               )}
